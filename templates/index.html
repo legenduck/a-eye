@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>시각 보조 서비스</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+
+<body>
+  <div id="container">
+    <video id="video" autoplay playsinline></video>
+    <div id="status">카메라를 로딩중입니다...</div>
+
+    <!-- 설정 버튼 (오른쪽 위) -->
+    <button id="settings-button" aria-label="설정 열기">⚙️</button>
+
+    <!-- 설정 패널 (처음엔 숨김) -->
+    <div id="settings-panel" class="hidden">
+      <div class="settings-content">
+        <div class="settings-header">
+          <h2>설정</h2>
+          <button id="close-settings" aria-label="설정 닫기">✕</button>
+        </div>
+
+        <div class="settings-section">
+          <h3>음성 속도 설정</h3>
+          <button id="speech-speed-button" class="settings-big-button">
+            🎤 음성 속도 설정
+          </button>
+          <div id="current-speed-display">현재 속도: 3배</div>
+        </div>
+
+        <div class="settings-section">
+          <h3>경고음 설정</h3>
+          <button id="enable-audio-button" class="settings-big-button">
+            🔊 경고음 활성화
+          </button>
+          <div id="audio-status-display">경고음: 비활성화</div>
+        </div>
+
+        <div class="settings-section">
+          <h3>분석 설정</h3>
+          <div class="setting-item">
+            <label for="model-select">분석 모델:</label>
+            <select id="model-select">
+              <option value="">모델 로딩 중...</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label for="mode-select">호출 모드:</label>
+            <select id="mode-select">
+              <option value="tts_end" selected>TTS 종료 시</option>
+              <option value="interval">시간 간격</option>
+            </select>
+          </div>
+          <div class="setting-item" id="interval-control" style="display: none">
+            <label for="interval-input">간격(초):</label>
+
+          </div>
+
+          <div class="settings-section">
+            <h3>거리 측정 설정</h3>
+            <div class="setting-item">
+              <button id="calibration-button" class="settings-big-button">
+                📏 거리 보정
+              </button>
+              <div id="calibration-status">보정 필요</div>
+            </div>
+            <div class="setting-item">
+              <label for="depth-alert-threshold">알림 임계값 (미터):</label>
+              <input type="number" id="depth-alert-threshold" value="0.5" min="0.1" max="5.0" step="0.1" />
+            </div>
+            <input type="number" id="interval-input" value="3" min="1" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 길찾기 버튼 (메인 화면에 배치) -->
+    <button id="directions-button" aria-label="길찾기 시작">📍 길찾기</button>
+
+    <!-- 시작 버튼 (더 크게) -->
+    <button id="capture-button" disabled aria-label="주변 상황 분석 시작">
+      시작
+    </button>
+  </div>
+  <audio id="beep-sound" src="{{ url_for('static', filename='1.wav') }}" preload="auto"></audio>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <!-- 보정 모달 -->
+  <div id="calibration-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>거리 보정</h3>
+        <button id="close-calibration" aria-label="보정 닫기">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="calibration-step-1">
+          <p>1. 보정을 위해 키(cm)를 입력해주세요. (예: 175)</p>
+          <input type="number" id="calibration-height" placeholder="키 (cm)" step="1" min="100" />
+          <button id="next-calibration-step">다음</button>
+        </div>
+        <div id="calibration-step-2" style="display: none;">
+          <p>2. 화면 중앙의 빨간 점을 보정 대상에 맞추고 촬영하세요</p>
+          <div id="calibration-camera-container">
+            <video id="calibration-video" autoplay playsinline></video>
+            <div id="calibration-target">🔴</div>
+          </div>
+          <button id="capture-calibration">촬영</button>
+          <button id="back-calibration-step">이전</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

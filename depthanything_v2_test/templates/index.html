@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실시간 웹캠 거리 측정 (Depth Anything V2)</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1600px;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar {
+            flex-basis: 350px;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        h1,
+        h2 {
+            text-align: center;
+            color: #bb86fc;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        video,
+        #overlay {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .result-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #result-image {
+            width: 100%;
+            max-width: 800px;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+
+        .controls label,
+        .calibration-controls label {
+            display: block;
+            margin-bottom: 5px;
+            color: #a0a0a0;
+        }
+
+        .controls select,
+        .controls button,
+        .calibration-controls input,
+        .calibration-controls button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            background-color: #2c2c2c;
+            color: #e0e0e0;
+            font-size: 16px;
+        }
+
+        .controls button,
+        .calibration-controls button {
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .calibration-controls button {
+            background-color: #6200ee;
+        }
+
+        .controls button#start-btn {
+            background-color: #03dac6;
+            color: #121212;
+            font-weight: bold;
+        }
+
+        .controls button#start-btn:disabled {
+            background-color: #444;
+            color: #888;
+        }
+
+        .controls button#stop-btn {
+            background-color: #cf6679;
+        }
+
+        .stats {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .stats h2 {
+            margin-top: 0;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .stat-item span:first-child {
+            color: #a0a0a0;
+        }
+
+        .stat-item span:last-child {
+            font-weight: bold;
+            color: #03dac6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="main-content">
+            <h1>실시간 웹캠 거리 측정</h1>
+
+            <!-- 순수 카메라 영역 -->
+            <div class="video-container">
+                <video id="webcam" autoplay playsinline></video>
+                <canvas id="overlay"></canvas>
+            </div>
+
+            <!-- 분석 결과 영역 -->
+            <div class="result-container">
+                <h2>분석 결과</h2>
+                <img id="result-image" />
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="controls">
+                <h2>설정</h2>
+                <label for="dataset">환경</label>
+                <select id="dataset">
+                    <option value="hypersim" selected>실내 (Indoor)</option>
+                    <option value="vkitti">실외 (Outdoor)</option>
+                </select>
+
+                <label for="encoder">모델 크기</label>
+                <select id="encoder">
+                    <option value="vits" selected>Small (Fastest)</option>
+                    <option value="vitb">Base</option>
+                    <option value="vitl">Large (Accurate)</option>
+                </select>
+
+                <button id="start-btn">측정 시작</button>
+                <button id="stop-btn" disabled>중지</button>
+            </div>
+
+            <div class="calibration-controls">
+                <h2>거리 보정 (선택)</h2>
+                <label for="user-height">사용자 키 (cm)</label>
+                <input type="number" id="user-height" placeholder="예: 175">
+                <button id="calibrate-btn">이 자세로 보정</button>
+                <div class="stat-item">
+                    <span>보정 계수</span>
+                    <span id="calib-factor">N/A</span>
+                </div>
+            </div>
+
+            <div class="stats">
+                <h2>성능</h2>
+                <div class="stat-item"><span>상태</span><span id="status">대기 중</span></div>
+                <div class="stat-item"><span>서버 지연시간 (ms)</span><span id="latency">N/A</span></div>
+                <div class="stat-item"><span>브라우저 처리속도 (FPS)</span><span id="fps">N/A</span></div>
+                <div class="stat-item"><span>가장 가까운 거리 (m)</span><span id="min-dist">N/A</span></div>
+                <div class="stat-item"><span>중앙점 거리 (m)</span><span id="center-dist">N/A</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM 요소
+        const video = document.getElementById('webcam');
+        const overlay = document.getElementById('overlay');
+        const resultImage = document.getElementById('result-image');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const datasetSelect = document.getElementById('dataset');
+        const encoderSelect = document.getElementById('encoder');
+        const userHeightInput = document.getElementById('user-height');
+        const calibrateBtn = document.getElementById('calibrate-btn');
+        const calibFactorEl = document.getElementById('calib-factor');
+        const statusEl = document.getElementById('status');
+        const latencyEl = document.getElementById('latency');
+        const fpsEl = document.getElementById('fps');
+        const minDistEl = document.getElementById('min-dist');
+        const centerDistEl = document.getElementById('center-dist');
+
+        // 상태 변수
+        let isAnalyzing = false;
+        let calibrationFactor = 1.0;
+        let analysisInterval = null;
+
+        // 웹캠 설정
+        async function setupWebcam() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480, facingMode: 'environment' }
+                });
+                video.srcObject = stream;
+                await new Promise(resolve => video.onloadedmetadata = resolve);
+
+                overlay.width = video.videoWidth;
+                overlay.height = video.videoHeight;
+                drawCenterPoint();
+
+                startBtn.disabled = false;
+            } catch (err) {
+                console.error("웹캠 오류:", err);
+                alert("웹캠을 찾을 수 없습니다.");
+            }
+        }
+
+        // 중앙점 그리기
+        function drawCenterPoint() {
+            const ctx = overlay.getContext('2d');
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+            const centerX = overlay.width / 2;
+            const centerY = overlay.height / 2;
+            const radius = 8;
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.stroke();
+        }
+
+        // 이미지 캡처
+        function captureFrame() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            return canvas.toDataURL('image/jpeg').split(',')[1];
+        }
+
+        // 분석 함수
+        async function analyzeFrame() {
+            if (!isAnalyzing) return;
+
+            try {
+                statusEl.textContent = '분석 중...';
+                const imageBase64 = captureFrame();
+                const modelName = `metric_${datasetSelect.value}_${encoderSelect.value}`;
+
+                const startTime = performance.now();
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image: imageBase64,
+                        model: modelName,
+                        calibrationFactor: calibrationFactor
+                    })
+                });
+
+                if (!response.ok) throw new Error('서버 오류');
+
+                const data = await response.json();
+                const endTime = performance.now();
+
+                // 결과 표시
+                resultImage.src = data.visualizedImage;
+                latencyEl.textContent = `${data.processingTime} (전체: ${Math.round(endTime - startTime)})`;
+                minDistEl.textContent = data.analysis.min_total.toFixed(2);
+                centerDistEl.textContent = data.analysis.center_depth.toFixed(2);
+                statusEl.textContent = '실시간 분석 중';
+
+                // FPS 계산
+                const fps = 1000 / (endTime - startTime);
+                fpsEl.textContent = fps.toFixed(1);
+
+            } catch (error) {
+                console.error("분석 오류:", error);
+                statusEl.textContent = '오류 발생';
+            }
+        }
+
+        // 시작/중지
+        startBtn.addEventListener('click', () => {
+            isAnalyzing = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            statusEl.textContent = '실시간 분석 중';
+
+            // 1초마다 분석
+            analysisInterval = setInterval(analyzeFrame, 1000);
+        });
+
+        stopBtn.addEventListener('click', () => {
+            isAnalyzing = false;
+            if (analysisInterval) {
+                clearInterval(analysisInterval);
+                analysisInterval = null;
+            }
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            statusEl.textContent = '대기 중';
+        });
+
+        // 보정
+        calibrateBtn.addEventListener('click', async () => {
+            const height = userHeightInput.value;
+            if (!height || height <= 0) {
+                alert('키를 입력해주세요.');
+                return;
+            }
+
+            calibrateBtn.disabled = true;
+            statusEl.textContent = '보정 중...';
+
+            try {
+                const imageBase64 = captureFrame();
+                const modelName = `metric_${datasetSelect.value}_${encoderSelect.value}`;
+
+                const response = await fetch('/calibrate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        height: height,
+                        image: imageBase64,
+                        model: modelName
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || '보정 실패');
+                }
+
+                const data = await response.json();
+                calibrationFactor = data.calibrationFactor;
+                localStorage.setItem('calibrationFactor', calibrationFactor);
+                calibFactorEl.textContent = calibrationFactor.toFixed(3);
+                alert(`보정 완료! 계수: ${calibrationFactor.toFixed(3)}`);
+
+            } catch (error) {
+                console.error("보정 오류:", error);
+                alert(`보정 실패: ${error.message}`);
+            } finally {
+                calibrateBtn.disabled = false;
+                statusEl.textContent = isAnalyzing ? '실시간 분석 중' : '대기 중';
+            }
+        });
+
+        // 초기화
+        function loadCalibrationFactor() {
+            const saved = localStorage.getItem('calibrationFactor');
+            if (saved) {
+                calibrationFactor = parseFloat(saved);
+                calibFactorEl.textContent = calibrationFactor.toFixed(3);
+            }
+        }
+
+        window.onload = () => {
+            setupWebcam();
+            loadCalibrationFactor();
+        };
+    </script>
+</body>
+
+</html>

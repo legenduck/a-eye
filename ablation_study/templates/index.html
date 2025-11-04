@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>시각 보조 서비스 - Model Performance Study</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+
+  <body>
+    <div id="container">
+      <img
+        id="current-image"
+        alt="Current test image"
+        style="width: 100%; height: 100%; object-fit: cover"
+      />
+      <div id="status">모델과 이미지를 로딩중입니다...</div>
+
+      <div id="controls">
+        <div class="control-group">
+          <label for="model-select">테스트 모델:</label>
+          <select id="model-select">
+            <option value="">모델 로딩 중...</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="mode-select">실행 모드:</label>
+          <select id="mode-select">
+            <option value="tts_end" selected>TTS 종료 시</option>
+            <option value="manual">수동 모드</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="image-info">이미지 정보:</label>
+          <span id="image-info">-/-</span>
+        </div>
+        <div class="control-group">
+          <label for="performance-info">성능 정보:</label>
+          <span id="performance-info">-</span>
+        </div>
+      </div>
+
+      <button id="capture-button" disabled>시작</button>
+
+      <div id="navigation-controls">
+        <button id="prev-button" disabled>이전</button>
+        <button id="next-button" disabled>다음</button>
+      </div>
+
+      <div id="report-controls">
+        <button id="report-button">성능 리포트</button>
+        <button id="clear-data-button">데이터 초기화</button>
+      </div>
+    </div>
+
+    <div id="report-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>모델 성능 분석 리포트</h2>
+          <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+          <div id="report-content">
+            <p>리포트를 생성중입니다...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>

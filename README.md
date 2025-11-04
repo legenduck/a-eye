@@ -1,5 +1,4 @@
-# A-EYE
-
+![](assets/poster.png)
 ```bash
 cp .env.template .env
 

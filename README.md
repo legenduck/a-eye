@@ -23,6 +23,8 @@ Grand Award (IITP Director's Award) — 2025 SW-Centric University Digital Compe
 
 ---
 
+> **Note** — This README is written with screen-reader and low-vision readers in mind: H1 first, descriptive alt text on the hero image, a prose summary alongside the architecture diagram, `aria-current` and `hreflang` on the language switcher, and endpoints grouped under H3 landmarks for fast heading navigation. The previous standard formatting is preserved at [README.en.md](README.en.md). See the [Accessibility](#accessibility) section at the end for the full rationale.
+
 ## Overview
 
 A real-time visual assistance web service for visually impaired users, exploring whether large language models can serve as an effective blind helper. The phone's camera streams scenes to a Flask backend that combines Google Gemini (vision-language reasoning), Depth Anything V2 (metric depth for proximity warning), and Naver Cloud Maps (turn-by-turn directions) to deliver concise spoken guidance about what is ahead.

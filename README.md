@@ -1,12 +1,21 @@
-![](assets/poster.png)
+<div align="center">
+
+<img src="assets/poster.png" alt="A-EYE main figure" width="720"/>
 
 # A-EYE: Can Large Language Models be an Effective Blind Helper?
 
-**Authors:** Deogyong Kim, Junhyeong Park, Jun Seong Lee
+**Deogyong Kim · Junhyeong Park · Jun Seong Lee**
 
-**Awards**
-- Grand Award (IITP Director's Award) — 2025 SW-Centric University Digital Competition
-- 1st Prize — SK AI Summit *AI's Got Talent*, Nov. 2025
+Grand Award (IITP Director's Award) — 2025 SW-Centric University Digital Competition  
+1st Prize — SK AI Summit *AI's Got Talent* (Nov. 2025)
+
+**English** · [한국어](README.ko.md) · [中文](README.zh.md) · [日本語](README.ja.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md)
+
+</div>
+
+---
+
+## Overview
 
 A real-time visual assistance web service for visually impaired users, exploring whether large language models can serve as an effective blind helper. The phone's camera streams scenes to a Flask backend that combines Google Gemini (vision-language reasoning), Depth Anything V2 (metric depth for proximity warning), and Naver Cloud Maps (turn-by-turn directions) to deliver concise spoken guidance about what is ahead.
 

@@ -42,7 +42,7 @@ html {
   min-height: 20px;
 }
 
-/* 설정 버튼 (오른쪽 위) */
+/* Settings button (top right) */
 #settings-button {
   position: absolute;
   top: 20px;
@@ -78,7 +78,7 @@ html {
   transform: none;
 }
 
-/* 설정 패널 */
+/* Settings panel */
 #settings-panel {
   position: fixed;
   top: 0;
@@ -234,7 +234,7 @@ html {
   border-color: #ffff00;
 }
 
-/* 길찾기 버튼 (메인 화면) */
+/* Directions button (main screen) */
 #directions-button {
   position: absolute;
   bottom: 50px;
@@ -271,7 +271,7 @@ html {
   transform: none;
 }
 
-/* 시작 버튼 (더 크고 접근성 향상) */
+/* Start button (larger, better accessibility) */
 #capture-button {
   position: absolute;
   bottom: 50px;
@@ -309,7 +309,7 @@ html {
   transform: translateX(-50%);
 }
 
-/* 정지 버튼 스타일 (자동 분석 중일 때) */
+/* Stop button style (during auto analysis) */
 #capture-button.stop {
   background-color: rgba(255, 0, 0, 0.9);
 }
@@ -318,7 +318,7 @@ html {
   background-color: rgba(255, 50, 50, 0.9);
 }
 
-/* 반응형 디자인 */
+/* Responsive design */
 @media (max-width: 768px) {
   #settings-button {
     width: 70px;
@@ -400,7 +400,7 @@ html {
   }
 }
 
-/* --- 보정 모달 스타일 시작 --- */
+/* --- Calibration modal styles begin --- */
 .modal {
   position: fixed;
   z-index: 300;
@@ -419,7 +419,7 @@ html {
 .modal.hidden {
   opacity: 0;
   pointer-events: none;
-  /* 숨겨졌을 때 클릭 안되게 */
+  /* Prevent clicks when hidden */
 }
 
 .modal-content {
@@ -499,7 +499,7 @@ html {
   position: relative;
   width: 100%;
   padding-top: 75%;
-  /* 4:3 비율 */
+  /* 4:3 ratio */
   background-color: black;
   margin-top: 15px;
   border-radius: 10px;
@@ -523,7 +523,7 @@ html {
   font-size: 3em;
   color: red;
   pointer-events: none;
-  /* 점은 클릭되지 않도록 */
+  /* Make the dot non-clickable */
 }
 
-/* --- 보정 모달 스타일 끝 --- */
+/* --- Calibration modal styles end --- */

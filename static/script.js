@@ -34,7 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let speechRecognition = null;
   let isListeningForSpeed = false;
 
-  // 오디오 컨텍스트 초기화
   let globalAudioContext = null;
   let audioInitialized = false;
 
@@ -43,23 +42,23 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
       audioInitialized = true;
-      console.log("✅ 오디오 컨텍스트가 성공적으로 초기화되었습니다.");
+      console.log("Audio context initialized successfully.");
     } catch (e) {
-      console.error("오디오 컨텍스트를 초기화할 수 없습니다.", e);
+      console.error("Could not initialize audio context.", e);
     }
   }
 
   function playWarningBeep() {
     try {
       const beepSound = document.getElementById('beep-sound');
-      // play()는 사용자의 상호작용 내에서 호출될 때 가장 잘 동작합니다.
-      // analyzeDepthForObstacles는 비동기적으로 호출되므로, 여기서 직접 play()를 부르는 것은
-      // 모바일에서 차단될 수 있습니다. 대신, 오디오를 미리 로드해두고 필요할 때 재생합니다.
+      // play() works best when called within a user interaction.
+      // analyzeDepthForObstacles is called asynchronously, so calling play() directly here
+      // may be blocked on mobile. Instead, preload audio and play when needed.
       if (beepSound && beepSound.src) {
-        beepSound.play().catch(e => console.error("경고음 재생 실패:", e));
+        beepSound.play().catch(e => console.error("Warning beep playback failed:", e));
       }
     } catch (error) {
-      console.error("경고음 재생 오류:", error);
+      console.error("Warning beep playback error:", error);
     }
   }
 
@@ -96,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
       isNavigating
     ) {
       event.preventDefault();
-      const shouldStop = confirm("길안내를 중지하시겠습니까?");
+      const shouldStop = confirm("Stop navigation?");
       if (shouldStop) {
         stopNavigation();
       }
@@ -121,26 +120,24 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const beepSound = document.getElementById('beep-sound');
 
-      // 사용자가 버튼을 누른 이 시점에 오디오를 로드하여 재생 준비
+      // Load audio at user interaction time so it's ready to play
       beepSound.load();
 
-      enableAudioButton.textContent = "🔊 경고음 활성화됨";
+      enableAudioButton.textContent = "🔊 Warning Sound Enabled";
       enableAudioButton.disabled = true;
-      audioStatusDisplay.textContent = "경고음: 활성화됨";
+      audioStatusDisplay.textContent = "Warning sound: enabled";
       audioStatusDisplay.style.color = "#00ff00";
 
-      console.log("✅ 경고음이 활성화되었습니다. 테스트 경고음을 재생합니다.");
+      console.log("Warning sound enabled. Playing test beep.");
 
-      // 로드가 완료되면 테스트 비프음을 재생
       beepSound.oncanplaythrough = () => {
         playWarningBeep();
-        // 이벤트 리스너가 반복해서 실행되지 않도록 null 처리
         beepSound.oncanplaythrough = null;
       };
 
     } catch (e) {
-      console.error("경고음 활성화 중 오류 발생", e);
-      audioStatusDisplay.textContent = "경고음: 활성화 실패";
+      console.error("Error enabling warning sound", e);
+      audioStatusDisplay.textContent = "Warning sound: failed to enable";
       audioStatusDisplay.style.color = "#ff0000";
     }
   });
@@ -159,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   nextCalibrationStep.addEventListener("click", () => {
     if (!calibrationHeight.value || calibrationHeight.value <= 0) {
-      alert("올바른 키를 입력해주세요.");
+      alert("Please enter a valid height.");
       return;
     }
     calibrationStep1.style.display = "none";
@@ -175,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   captureCalibration.addEventListener("click", async () => {
     if (!calibrationStream) {
-      alert("카메라가 준비되지 않았습니다.");
+      alert("Camera is not ready.");
       return;
     }
     const canvas = document.createElement("canvas");
@@ -197,17 +194,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await response.json();
         if (response.ok) {
           sessionStorage.setItem("calibrationFactor", data.calibrationFactor);
-          calibrationStatus.textContent = `보정 완료 (계수: ${data.calibrationFactor.toFixed(3)})`;
+          calibrationStatus.textContent = `Calibrated (factor: ${data.calibrationFactor.toFixed(3)})`;
           calibrationStatus.style.color = "#00ff00";
-          alert("보정이 완료되었습니다.");
+          alert("Calibration completed.");
           calibrationModal.classList.add("hidden");
           stopCalibrationCamera();
         } else {
-          throw new Error(data.error || "알 수 없는 오류");
+          throw new Error(data.error || "Unknown error");
         }
       } catch (error) {
-        alert(`보정 실패: ${error.message}`);
-        calibrationStatus.textContent = "보정 실패";
+        alert(`Calibration failed: ${error.message}`);
+        calibrationStatus.textContent = "Calibration failed";
         calibrationStatus.style.color = "#ff0000";
       }
     }, "image/jpeg");
@@ -220,8 +217,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       calibrationVideo.srcObject = calibrationStream;
     } catch (error) {
-      console.error("보정 카메라 시작 실패:", error);
-      alert("보정용 카메라를 시작할 수 없습니다.");
+      console.error("Failed to start calibration camera:", error);
+      alert("Could not start the calibration camera.");
     }
   }
 
@@ -229,13 +226,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (calibrationStream) {
       calibrationStream.getTracks().forEach(track => track.stop());
       calibrationStream = null;
-      // 메인 비디오 스트림은 건드리지 않도록 수정
       const calibrationVideo = document.getElementById("calibration-video");
       if (calibrationVideo) {
         calibrationVideo.srcObject = null;
       }
     }
-    // 보정이 끝나면 메인 카메라를 다시 시작해준다.
     startCamera();
   }
 
@@ -259,120 +254,108 @@ document.addEventListener("DOMContentLoaded", () => {
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      console.error("이 브라우저는 음성 인식을 지원하지 않습니다.");
+      console.error("This browser does not support speech recognition.");
       speechSpeedButton.disabled = true;
-      speechSpeedButton.textContent = "음성 인식 미지원";
+      speechSpeedButton.textContent = "Speech recognition unsupported";
       return;
     }
 
     speechRecognition = new SpeechRecognition();
-    speechRecognition.lang = "ko-KR";
+    speechRecognition.lang = "en-US";
     speechRecognition.continuous = false;
     speechRecognition.interimResults = false;
     speechRecognition.maxAlternatives = 1;
 
     speechRecognition.onstart = () => {
-      logPerformance("음성 인식 시작");
-      speechSpeedButton.textContent = "🎤 듣고 있습니다...";
+      logPerformance("Speech recognition started");
+      speechSpeedButton.textContent = "🎤 Listening...";
       speechSpeedButton.disabled = true;
       isListeningForSpeed = true;
     };
 
     speechRecognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
-      logPerformance(`음성 인식 결과: "${transcript}"`);
+      logPerformance(`Speech recognition result: "${transcript}"`);
 
       const speed = extractSpeedFromText(transcript);
       if (speed) {
         setTTSSpeed(speed);
       } else {
-        speak("인식된 속도가 없습니다. 1배부터 10배까지 말씀해주세요.");
+        speak("No recognized speed. Please say a number from one to ten.");
       }
     };
 
     speechRecognition.onend = () => {
-      logPerformance("음성 인식 종료");
-      speechSpeedButton.textContent = "🎤 음성 속도 설정";
+      logPerformance("Speech recognition ended");
+      speechSpeedButton.textContent = "🎤 Set Speech Speed";
       speechSpeedButton.disabled = false;
       isListeningForSpeed = false;
     };
 
     speechRecognition.onerror = (event) => {
-      logPerformance(`음성 인식 오류: ${event.error}`);
-      speechSpeedButton.textContent = "🎤 음성 속도 설정";
+      logPerformance(`Speech recognition error: ${event.error}`);
+      speechSpeedButton.textContent = "🎤 Set Speech Speed";
       speechSpeedButton.disabled = false;
       isListeningForSpeed = false;
-      speak("음성 인식에 실패했습니다. 다시 시도해주세요.");
+      speak("Speech recognition failed. Please try again.");
     };
   }
 
   function extractSpeedFromText(text) {
-    logPerformance(`속도 추출 시도: "${text}"`);
+    logPerformance(`Speed extraction attempt: "${text}"`);
 
-    const koreanNumbers = {
-      일: 1,
-      한: 1,
-      하나: 1,
-      이: 2,
-      두: 2,
-      둘: 2,
-      삼: 3,
-      세: 3,
-      셋: 3,
-      사: 4,
-      네: 4,
-      넷: 4,
-      오: 5,
-      다섯: 5,
-      육: 6,
-      여섯: 6,
-      칠: 7,
-      일곱: 7,
-      팔: 8,
-      여덟: 8,
-      구: 9,
-      아홉: 9,
-      십: 10,
-      열: 10,
+    const englishNumbers = {
+      one: 1,
+      two: 2,
+      three: 3,
+      four: 4,
+      five: 5,
+      six: 6,
+      seven: 7,
+      eight: 8,
+      nine: 9,
+      ten: 10,
     };
 
+    const lowered = text.toLowerCase();
+
     const patterns = [
-      /(\d+)\s*배/g,
-      /([가-힣]+)\s*배/g,
-      /(\d+)\s*빼/g, // 발음 유사
-      /([가-힣]+)\s*빼/g,
-      /(\d+)\s*배속/g,
-      /([가-힣]+)\s*배속/g,
+      /(\d+)\s*x/g,
+      /(\d+)\s*times/g,
+      /([a-z]+)\s*x/g,
+      /([a-z]+)\s*times/g,
+      /\b(\d+)\b/g,
+      /\b([a-z]+)\b/g,
     ];
 
     for (const pattern of patterns) {
       let match;
-      while ((match = pattern.exec(text)) !== null) {
-        const numberStr = match[1];
-        let number = parseInt(numberStr);
+      while ((match = pattern.exec(lowered)) !== null) {
+        const token = match[1];
+        let number = parseInt(token);
 
         if (isNaN(number)) {
-          number = koreanNumbers[numberStr];
+          number = englishNumbers[token];
         }
 
         if (number && number >= 1 && number <= 10) {
-          logPerformance(`속도 추출 성공: ${number}배`);
+          logPerformance(`Speed extracted: ${number}x`);
           return number;
         }
       }
     }
 
-    logPerformance("속도 추출 실패");
+    logPerformance("Speed extraction failed");
     return null;
   }
 
   function setTTSSpeed(speed) {
     currentTTSSpeed = speed;
     localStorage.setItem("tts-speed", speed);
-    currentSpeedDisplay.textContent = `현재 속도: ${speed}배`;
-    logPerformance(`TTS 속도 설정: ${speed}배`);
+    currentSpeedDisplay.textContent = `Current speed: ${speed}x`;
+    logPerformance(`TTS speed set: ${speed}x`);
 
-    speak(`음성 속도가 ${speed}배로 설정되었습니다.`);
+    speak(`Speech speed set to ${speed} times.`);
   }
 
   function loadTTSSpeed() {
@@ -381,8 +364,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const speed = parseInt(savedSpeed);
       if (speed >= 1 && speed <= 10) {
         currentTTSSpeed = speed;
-        currentSpeedDisplay.textContent = `현재 속도: ${speed}배`;
-        logPerformance(`저장된 TTS 속도 불러오기: ${speed}배`);
+        currentSpeedDisplay.textContent = `Current speed: ${speed}x`;
+        logPerformance(`Loaded saved TTS speed: ${speed}x`);
       }
     }
   }
@@ -393,11 +376,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (!speechRecognition) {
-      speak("음성 인식을 지원하지 않는 브라우저입니다.");
+      speak("This browser does not support speech recognition.");
       return;
     }
 
-    speak("몇 배로 설정하시겠습니까? 1배부터 10배까지 말씀해주세요.", () => {
+    speak("What speed would you like? Say a number from one to ten.", () => {
       setTimeout(() => {
         speechRecognition.start();
       }, 500);
@@ -406,7 +389,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadModels() {
     try {
-      logPerformance("모델 목록 로드 시작");
+      logPerformance("Loading model list");
       const response = await fetch("/get_models");
       const data = await response.json();
 
@@ -420,12 +403,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         modelSelect.appendChild(option);
       });
-      logPerformance(`모델 목록 로드 완료 - ${data.models.length}개 모델`);
+      logPerformance(`Model list loaded - ${data.models.length} models`);
     } catch (err) {
-      logPerformance(`모델 목록 로드 실패 - 오류: ${err}`);
-      console.error("모델 목록 로드 에러:", err);
+      logPerformance(`Failed to load model list - error: ${err}`);
+      console.error("Model list load error:", err);
       modelSelect.innerHTML =
-        '<option value="gemini-2.0-flash">Gemini 2.0 Flash (기본)</option>';
+        '<option value="gemini-2.0-flash">Gemini 2.0 Flash (default)</option>';
     }
   }
 
@@ -437,10 +420,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 카메라 스트림 가져오기
   async function startCamera() {
     const cameraStart = performance.now();
-    logPerformance("카메라 초기화 시작");
+    logPerformance("Camera initialization started");
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -450,28 +432,28 @@ document.addEventListener("DOMContentLoaded", () => {
       video.onloadedmetadata = () => {
         const cameraTime = performance.now() - cameraStart;
         logPerformance(
-          `카메라 초기화 완료 - 소요시간: ${cameraTime.toFixed(3)}ms`
+          `Camera initialized - elapsed: ${cameraTime.toFixed(3)}ms`
         );
         statusDiv.textContent =
-          "준비 완료! (스페이스: 분석 시작, 📍버튼: 길찾기, ESC: 중지)";
+          "Ready! (Space: start analysis, 📍: directions, ESC: stop)";
         captureButton.disabled = false;
         directionsButton.disabled = false;
       };
     } catch (err) {
       const cameraTime = performance.now() - cameraStart;
       logPerformance(
-        `카메라 초기화 실패 - 소요시간: ${cameraTime.toFixed(
+        `Camera initialization failed - elapsed: ${cameraTime.toFixed(
           3
-        )}ms, 오류: ${err}`
+        )}ms, error: ${err}`
       );
-      console.error("카메라 접근 에러:", err);
-      statusDiv.textContent = "카메라를 사용할 수 없습니다.";
+      console.error("Camera access error:", err);
+      statusDiv.textContent = "Camera unavailable.";
     }
   }
 
-  // 동기/블로킹 함수(prompt, confirm) 호출 후 멈춘 카메라를 재활성화하는 함수
+  // Re-activate the camera after blocking calls (prompt, confirm) freeze it
   async function unfreezeCamera() {
-    logPerformance("카메라 스트림을 재활성화합니다.");
+    logPerformance("Re-activating camera stream.");
     try {
       if (video.srcObject) {
         video.srcObject.getVideoTracks().forEach(track => track.stop());
@@ -479,16 +461,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       video.srcObject = stream;
       await video.play();
-      logPerformance("카메라 스트림 재활성화 완료.");
+      logPerformance("Camera stream re-activated.");
     } catch (error) {
-      console.error("카메라 재활성화 실패:", error);
+      console.error("Camera re-activation failed:", error);
     }
   }
 
-  // 이미지 캡처 및 서버 전송
   async function captureAndDescribe(onComplete, includeLocation = false) {
     if (isProcessing) {
-      logPerformance("이미 처리 중이므로 요청 무시");
+      logPerformance("Already processing, ignoring request");
       if (onComplete) onComplete();
       return;
     }
@@ -496,11 +477,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const totalStart = performance.now();
     const selectedModel = modelSelect.value || "gemini-2.0-flash";
     logPerformance(
-      `=== 새로운 이미지 캡처 및 분석 시작 - 모델: ${selectedModel} ===`
+      `=== New image capture and analysis started - model: ${selectedModel} ===`
     );
 
     isProcessing = true;
-    statusDiv.textContent = `분석 중... (${modelSelect.options[modelSelect.selectedIndex].text
+    statusDiv.textContent = `Analyzing... (${modelSelect.options[modelSelect.selectedIndex].text
       })`;
 
     const captureStart = performance.now();
@@ -511,16 +492,16 @@ document.addEventListener("DOMContentLoaded", () => {
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     const captureTime = performance.now() - captureStart;
     logPerformance(
-      `이미지 캡처 완료 - 해상도: ${canvas.width}x${canvas.height
-      }, 소요시간: ${captureTime.toFixed(3)}ms`
+      `Image capture completed - resolution: ${canvas.width}x${canvas.height
+      }, elapsed: ${captureTime.toFixed(3)}ms`
     );
 
     const blobStart = performance.now();
     canvas.toBlob(async (blob) => {
       const blobTime = performance.now() - blobStart;
       logPerformance(
-        `Blob 변환 완료 - 크기: ${blob.size
-        } bytes, 소요시간: ${blobTime.toFixed(3)}ms`
+        `Blob conversion completed - size: ${blob.size
+        } bytes, elapsed: ${blobTime.toFixed(3)}ms`
       );
 
       const formDataStart = performance.now();
@@ -538,26 +519,25 @@ document.addEventListener("DOMContentLoaded", () => {
             const position = await getCurrentPosition();
             const currentLocation = `${position.coords.longitude},${position.coords.latitude}`;
             formData.append("location", currentLocation);
-            logPerformance(`위치 정보 포함됨: ${currentLocation}`);
+            logPerformance(`Location attached: ${currentLocation}`);
           } catch (locationError) {
-            logPerformance(`위치 정보 가져오기 실패: ${locationError.message}`);
+            logPerformance(`Failed to get location: ${locationError.message}`);
           }
         }
       }
 
       const formDataTime = performance.now() - formDataStart;
       logPerformance(
-        `FormData 준비 완료 - 엔드포인트: ${endpoint}, 소요시간: ${formDataTime.toFixed(
+        `FormData prepared - endpoint: ${endpoint}, elapsed: ${formDataTime.toFixed(
           3
         )}ms`
       );
 
       try {
-        // 깊이 분석 병렬 실행
         analyzeDepthForObstacles(canvas);
 
         const requestStart = performance.now();
-        logPerformance(`서버 요청 시작 (${endpoint})...`);
+        logPerformance(`Server request started (${endpoint})...`);
 
         const response = await fetch(endpoint, {
           method: "POST",
@@ -566,31 +546,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const requestTime = performance.now() - requestStart;
         logPerformance(
-          `서버 응답 수신 - 상태: ${response.status
-          }, 소요시간: ${requestTime.toFixed(3)}ms`
+          `Server response received - status: ${response.status
+          }, elapsed: ${requestTime.toFixed(3)}ms`
         );
 
-        if (!response.ok) throw new Error(`서버 에러: ${response.statusText}`);
+        if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
 
         const parseStart = performance.now();
         const data = await response.json();
         const parseTime = performance.now() - parseStart;
-        logPerformance(`응답 파싱 완료 - 소요시간: ${parseTime.toFixed(3)}ms`);
+        logPerformance(`Response parsed - elapsed: ${parseTime.toFixed(3)}ms`);
 
         if (data.description) {
           statusDiv.textContent = data.description;
           logPerformance(
-            `분석 결과: "${data.description}" (${data.description.length}자)`
+            `Analysis result: "${data.description}" (${data.description.length} chars)`
           );
           logPerformance(
-            `사용 모델: ${data.model_name
-            }, 서버 처리시간: ${data.processing_time?.toFixed(3)}초`
+            `Model used: ${data.model_name
+            }, server processing time: ${data.processing_time?.toFixed(3)}s`
           );
 
-          // 길안내 정보 처리
           if (data.navigation) {
             logPerformance(
-              `길안내 정보 수신: 진행상황 ${data.navigation.instruction_index + 1
+              `Navigation info received: progress ${data.navigation.instruction_index + 1
               }/${data.navigation.total_instructions}`
             );
 
@@ -598,12 +577,12 @@ document.addEventListener("DOMContentLoaded", () => {
               navigationSession.current_instruction =
                 data.navigation.current_instruction;
               logPerformance(
-                `길안내 업데이트됨: ${data.navigation.current_instruction}`
+                `Navigation updated: ${data.navigation.current_instruction}`
               );
             }
 
             if (data.location_updated) {
-              logPerformance("위치 업데이트 완료");
+              logPerformance("Location updated");
             }
           }
 
@@ -611,16 +590,16 @@ document.addEventListener("DOMContentLoaded", () => {
           speak(data.description, () => {
             const ttsTime = performance.now() - ttsStart;
             const totalTime = performance.now() - totalStart;
-            logPerformance(`TTS 완료 - 소요시간: ${ttsTime.toFixed(3)}ms`);
+            logPerformance(`TTS completed - elapsed: ${ttsTime.toFixed(3)}ms`);
             logPerformance(
-              `=== 전체 처리 완료 - 총 소요시간: ${totalTime.toFixed(3)}ms ===`
+              `=== Full processing completed - total elapsed: ${totalTime.toFixed(3)}ms ===`
             );
             logPerformance(
-              `시간 분석: 캡처(${captureTime.toFixed(
+              `Time breakdown: capture(${captureTime.toFixed(
                 1
               )}ms) + Blob(${blobTime.toFixed(
                 1
-              )}ms) + 서버(${requestTime.toFixed(1)}ms) + TTS(${ttsTime.toFixed(
+              )}ms) + server(${requestTime.toFixed(1)}ms) + TTS(${ttsTime.toFixed(
                 1
               )}ms)`
             );
@@ -628,18 +607,18 @@ document.addEventListener("DOMContentLoaded", () => {
             if (onComplete) onComplete();
           });
         } else {
-          throw new Error(data.error || "내용 없음");
+          throw new Error(data.error || "Empty content");
         }
       } catch (err) {
         const errorTime = performance.now() - totalStart;
         logPerformance(
-          `분석 요청 실패 - 총 소요시간: ${errorTime.toFixed(
+          `Analysis request failed - total elapsed: ${errorTime.toFixed(
             3
-          )}ms, 오류: ${err}`
+          )}ms, error: ${err}`
         );
-        console.error("분석 요청 에러:", err);
-        statusDiv.textContent = "분석에 실패했습니다.";
-        speak("오류가 발생했습니다.", onComplete);
+        console.error("Analysis request error:", err);
+        statusDiv.textContent = "Analysis failed.";
+        speak("An error occurred.", onComplete);
       } finally {
         isProcessing = false;
       }
@@ -666,24 +645,24 @@ document.addEventListener("DOMContentLoaded", () => {
           playWarningBeep();
         }
       } catch (error) {
-        console.warn("깊이 분석 요청 오류:", error);
+        console.warn("Depth analysis request error:", error);
       }
     }, "image/jpeg");
   }
 
   function speak(text, onEndCallback) {
     const ttsStart = performance.now();
-    logPerformance(`TTS 시작 - 텍스트: "${text}", 속도: ${currentTTSSpeed}배`);
+    logPerformance(`TTS started - text: "${text}", speed: ${currentTTSSpeed}x`);
 
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "ko-KR";
+    utterance.lang = "en-US";
     utterance.rate = currentTTSSpeed;
 
     utterance.onend = () => {
       const ttsTime = performance.now() - ttsStart;
-      logPerformance(`TTS 정상 종료 - 소요시간: ${ttsTime.toFixed(3)}ms`);
+      logPerformance(`TTS ended normally - elapsed: ${ttsTime.toFixed(3)}ms`);
       if (onEndCallback) {
         onEndCallback();
       }
@@ -691,7 +670,7 @@ document.addEventListener("DOMContentLoaded", () => {
     utterance.onerror = (event) => {
       const ttsTime = performance.now() - ttsStart;
       logPerformance(
-        `TTS 오류 발생 - 소요시간: ${ttsTime.toFixed(3)}ms, 오류: ${event.error
+        `TTS error - elapsed: ${ttsTime.toFixed(3)}ms, error: ${event.error
         }`
       );
       console.error("SpeechSynthesis Error:", event.error);
@@ -707,13 +686,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!isAutoCapturing) return;
 
     const mode = modeSelect.value;
-    logPerformance(`자동 캡처 실행 - 모드: ${mode}`);
+    logPerformance(`Auto capture run - mode: ${mode}`);
 
     if (mode === "tts_end") {
       captureAndDescribe(runAutoCapture, isNavigating);
     } else {
       const interval = (parseInt(intervalInput.value, 10) || 3) * 1000;
-      logPerformance(`시간 간격 모드 - 다음 실행까지 ${interval}ms 대기`);
+      logPerformance(`Interval mode - waiting ${interval}ms until next run`);
       captureLoop = setTimeout(() => {
         captureAndDescribe(() => {
           runAutoCapture();
@@ -722,20 +701,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 시작/정지 토글 버튼
   captureButton.addEventListener("click", () => {
-    // 오디오 컨텍스트를 사용자의 첫 상호작용 시점에 초기화
     initializeAudio();
 
     if (isAutoCapturing) {
-      logPerformance("자동 캡처 정지 요청");
+      logPerformance("Auto capture stop requested");
 
       if (isNavigating) {
         const stopAll = confirm(
-          "주변 상황 분석을 중지합니다.\n길안내도 함께 중지하시겠습니까?"
+          "Stopping scene analysis.\nAlso stop navigation?"
         );
 
-        // confirm 창으로 인해 카메라가 멈추므로 재활성화합니다.
         unfreezeCamera();
 
         if (stopAll) {
@@ -752,12 +728,12 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((res) => res.json())
         .then((data) =>
           logPerformance(
-            `서버 중지 응답: ${data.message || JSON.stringify(data)}`
+            `Server stop response: ${data.message || JSON.stringify(data)}`
           )
         )
-        .catch((err) => logPerformance(`서버 중지 요청 실패: ${err}`));
+        .catch((err) => logPerformance(`Server stop request failed: ${err}`));
 
-      captureButton.textContent = "🔄 시작";
+      captureButton.textContent = "🔄 Start";
       captureButton.classList.remove("stop");
       modeSelect.disabled = false;
       modelSelect.disabled = false;
@@ -769,19 +745,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (isNavigating) {
         statusDiv.textContent =
-          "📍 길안내 진행 중 - 주변 상황 분석 정지됨 (ESC: 길안내 중지, 스페이스: 분석 재시작)";
-        speak("주변 상황 분석을 중지했습니다. 길안내는 계속됩니다.");
+          "📍 Navigation in progress - scene analysis stopped (ESC: stop nav, Space: restart analysis)";
+        speak("Scene analysis stopped. Navigation continues.");
       } else {
-        statusDiv.textContent = "자동 분석 정지됨 (스페이스: 시작)";
+        statusDiv.textContent = "Auto analysis stopped (Space: start)";
       }
-      logPerformance("자동 캡처 정지됨");
+      logPerformance("Auto capture stopped");
     } else {
       const selectedModel = modelSelect.options[modelSelect.selectedIndex].text;
       logPerformance(
-        `자동 캡처 시작 - 모드: ${modeSelect.value}, 모델: ${selectedModel}`
+        `Auto capture started - mode: ${modeSelect.value}, model: ${selectedModel}`
       );
       isAutoCapturing = true;
-      captureButton.textContent = isNavigating ? "🔄 분석 정지" : "🔄 정지";
+      captureButton.textContent = isNavigating ? "🔄 Stop Analysis" : "🔄 Stop";
       captureButton.classList.add("stop");
       modeSelect.disabled = true;
       modelSelect.disabled = true;
@@ -793,44 +769,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (isNavigating) {
         statusDiv.textContent =
-          "📍 길안내 + 🔄 상황 분석 진행 중 (ESC: 길안내 중지)";
-        speak("길안내 중 주변 상황 분석을 시작합니다.");
+          "📍 Navigation + 🔄 scene analysis in progress (ESC: stop nav)";
+        speak("Starting scene analysis during navigation.");
       } else {
-        statusDiv.textContent = "🔄 주변 상황 자동 분석 중 (스페이스: 정지)";
-        speak("주변 상황 자동 분석을 시작합니다.");
+        statusDiv.textContent = "🔄 Scene auto-analysis running (Space: stop)";
+        speak("Starting scene auto-analysis.");
       }
 
       runAutoCapture();
     }
   });
 
-  // 길찾기 버튼
   directionsButton.addEventListener("click", async () => {
     if (isNavigating) {
-      logPerformance("길찾기 안내 중지 요청");
+      logPerformance("Navigation stop requested");
       stopNavigation();
       return;
     }
 
-    const destination = prompt("목적지를 입력하세요 (예: 서울역):");
+    const destination = prompt("Enter destination (e.g., Seoul Station):");
 
-    // prompt로 인해 카메라가 멈추는 현상을 해결하기 위해 스트림을 재활성화합니다.
+    // The prompt freezes the camera; re-activate the stream.
     unfreezeCamera();
 
     if (!destination) {
-      logPerformance("목적지 입력 취소됨");
+      logPerformance("Destination input cancelled");
       return;
     }
 
-    logPerformance(`길찾기 시작 - 목적지: ${destination}`);
-    statusDiv.textContent = "현재 위치를 확인하고 목적지를 검색 중입니다...";
-    speak("현재 위치를 확인하고 목적지를 검색합니다. 잠시만 기다려주세요.");
+    logPerformance(`Directions started - destination: ${destination}`);
+    statusDiv.textContent = "Confirming current location and searching destination...";
+    speak("Confirming current location and searching destination. Please wait.");
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
         const startCoords = `${longitude},${latitude}`;
-        logPerformance(`현재 위치 확인됨: ${startCoords}`);
+        logPerformance(`Current location: ${startCoords}`);
 
         try {
           const response = await fetch("/start_navigation", {
@@ -846,7 +821,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const data = await response.json();
 
           if (!response.ok) {
-            throw new Error(data.error || "경로를 찾을 수 없습니다.");
+            throw new Error(data.error || "Could not find a route.");
           }
 
           if (data.session_id) {
@@ -857,80 +832,73 @@ document.addEventListener("DOMContentLoaded", () => {
             };
             startGPSNavigation();
           } else {
-            throw new Error("네비게이션 세션을 시작할 수 없습니다.");
+            throw new Error("Could not start navigation session.");
           }
         } catch (err) {
-          logPerformance(`길찾기 오류: ${err.message}`);
-          statusDiv.textContent = `오류: ${err.message}`;
-          speak(`오류가 발생했습니다. ${err.message}`);
+          logPerformance(`Directions error: ${err.message}`);
+          statusDiv.textContent = `Error: ${err.message}`;
+          speak(`An error occurred. ${err.message}`);
         }
       },
       (error) => {
-        logPerformance(`GPS 위치 확인 실패: ${error.message}`);
-        statusDiv.textContent = "GPS 위치를 확인할 수 없습니다.";
-        speak("GPS 위치를 확인할 수 없어 길찾기를 시작할 수 없습니다.");
+        logPerformance(`GPS location failed: ${error.message}`);
+        statusDiv.textContent = "Could not confirm GPS location.";
+        speak("Could not confirm GPS location, so directions cannot start.");
       },
       { enableHighAccuracy: true }
     );
   });
 
-  // GPS 연동 길찾기 안내 시작
   function startGPSNavigation() {
     isNavigating = true;
-    directionsButton.textContent = "📍 안내 중지";
+    directionsButton.textContent = "📍 Stop Navigation";
     settingsButton.disabled = true;
-    logPerformance("GPS 연동 길찾기 안내 시작");
+    logPerformance("GPS-linked navigation started");
 
-    // 길안내 시작 시, 자동 분석이 이미 실행중이 아니라면 사용자에게 물어봄
     if (!isAutoCapturing) {
       const startAnalysis = confirm(
-        "길안내와 함께 주변 상황 분석도 시작하시겠습니까?\\n\\n" +
-        "- 예: 길안내 + 주변 상황 분석 동시 진행\\n" +
-        "- 아니오: 길안내만 진행 (나중에 스페이스바로 분석 시작 가능)"
+        "Also start scene analysis along with navigation?\\n\\n" +
+        "- Yes: navigation + scene analysis simultaneously\\n" +
+        "- No: navigation only (you can start analysis later with Space)"
       );
 
-      // confirm 창으로 인해 카메라가 멈추므로 재활성화합니다.
       unfreezeCamera();
 
       if (startAnalysis) {
-        // "예"를 누르면 자동 분석 시작
         isAutoCapturing = true;
-        captureButton.textContent = "🔄 분석 정지";
+        captureButton.textContent = "🔄 Stop Analysis";
         captureButton.classList.add("stop");
         modeSelect.disabled = true;
         modelSelect.disabled = true;
         intervalInput.disabled = true;
-        logPerformance("길안내와 함께 자동 이미지 분석 시작");
+        logPerformance("Starting auto image analysis with navigation");
 
-        // runAutoCapture는 speak 이후에 호출되어 자연스러운 흐름을 만듬
       } else {
-        logPerformance("길안내만 시작 - 이미지 분석은 사용자가 수동으로 제어");
+        logPerformance("Navigation only - user controls image analysis manually");
       }
     }
 
     if (navigationSession.current_instruction) {
-      logPerformance(`첫 안내: ${navigationSession.current_instruction}`);
+      logPerformance(`First instruction: ${navigationSession.current_instruction}`);
 
       if (isAutoCapturing) {
-        statusDiv.textContent = `📍 길안내 + 🔄 상황 분석: ${navigationSession.current_instruction} (ESC: 길안내 중지)`;
+        statusDiv.textContent = `📍 Navigation + 🔄 analysis: ${navigationSession.current_instruction} (ESC: stop nav)`;
         speak(
-          "경로 안내와 주변 상황 분석을 함께 시작합니다. " +
+          "Starting route guidance with scene analysis. " +
           navigationSession.current_instruction,
           () => {
-            // TTS가 끝난 후 자동 캡처 시작
             runAutoCapture();
           }
         );
       } else {
-        statusDiv.textContent = `📍 길안내 진행 중: ${navigationSession.current_instruction} (ESC: 길안내 중지, 스페이스: 상황 분석 시작)`;
+        statusDiv.textContent = `📍 Navigation in progress: ${navigationSession.current_instruction} (ESC: stop nav, Space: start analysis)`;
         speak(
-          "경로 안내를 시작합니다. 주변 상황 분석은 스페이스바를 눌러 별도로 시작할 수 있습니다. " +
+          "Starting route guidance. You can start scene analysis separately with the space bar. " +
           navigationSession.current_instruction
         );
       }
     }
 
-    // 카메라 스트림을 멈추지 않으므로, 이 부분에서 별도의 카메라 제어 로직은 불필요
     startLocationTracking();
   }
 
@@ -939,8 +907,8 @@ document.addEventListener("DOMContentLoaded", () => {
       watchId = navigator.geolocation.watchPosition(
         updateNavigationLocation,
         (error) => {
-          logPerformance(`GPS 위치 추적 오류: ${error.message}`);
-          speak("GPS 위치 추적에 오류가 발생했습니다.");
+          logPerformance(`GPS tracking error: ${error.message}`);
+          speak("An error occurred during GPS tracking.");
         },
         {
           enableHighAccuracy: true,
@@ -948,10 +916,10 @@ document.addEventListener("DOMContentLoaded", () => {
           maximumAge: 5000,
         }
       );
-      logPerformance("GPS 위치 추적 시작됨");
+      logPerformance("GPS tracking started");
     } else {
-      logPerformance("GPS를 지원하지 않는 브라우저입니다.");
-      speak("GPS를 지원하지 않는 브라우저입니다.");
+      logPerformance("Browser does not support GPS.");
+      speak("This browser does not support GPS.");
     }
   }
 
@@ -982,14 +950,13 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
           navigationSession.current_instruction = data.current_instruction;
 
-          // 현재 상태에 따라 적절한 상태 메시지 표시
           if (isAutoCapturing) {
-            statusDiv.textContent = `📍 길안내 + 🔄 상황 분석: ${data.current_instruction} (ESC: 길안내 중지)`;
+            statusDiv.textContent = `📍 Navigation + 🔄 analysis: ${data.current_instruction} (ESC: stop nav)`;
           } else {
-            statusDiv.textContent = `📍 길안내 진행 중: ${data.current_instruction} (ESC: 길안내 중지, 스페이스: 상황 분석 시작)`;
+            statusDiv.textContent = `📍 Navigation in progress: ${data.current_instruction} (ESC: stop nav, Space: start analysis)`;
           }
 
-          logPerformance(`새 안내: ${data.current_instruction}`);
+          logPerformance(`New instruction: ${data.current_instruction}`);
           speak(data.current_instruction);
         }
 
@@ -997,10 +964,10 @@ document.addEventListener("DOMContentLoaded", () => {
           finishNavigation();
         }
       } else {
-        logPerformance(`위치 업데이트 실패: ${data.error}`);
+        logPerformance(`Location update failed: ${data.error}`);
       }
     } catch (err) {
-      logPerformance(`위치 업데이트 오류: ${err.message}`);
+      logPerformance(`Location update error: ${err.message}`);
     }
   }
 
@@ -1008,7 +975,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (watchId) {
       navigator.geolocation.clearWatch(watchId);
       watchId = null;
-      logPerformance("GPS 위치 추적 중지됨");
+      logPerformance("GPS tracking stopped");
     }
 
     if (navigationSession) {
@@ -1021,49 +988,47 @@ document.addEventListener("DOMContentLoaded", () => {
           session_id: navigationSession.id,
         }),
       }).catch((err) => {
-        logPerformance(`세션 종료 요청 실패: ${err.message}`);
+        logPerformance(`Session end request failed: ${err.message}`);
       });
       navigationSession = null;
     }
 
     isNavigating = false;
-    isProcessing = false; // 분석 중 상태 플래그를 확실하게 초기화
+    isProcessing = false;
     if (isAutoCapturing) {
       isAutoCapturing = false;
       clearTimeout(captureLoop);
       window.speechSynthesis.cancel();
-      // 서버에도 자동 처리 중지를 명시적으로 요청
       fetch("/stop_auto_processing", { method: "POST" })
         .then((res) => res.json())
         .then((data) =>
           logPerformance(
-            `서버 중지 응답: ${data.message || JSON.stringify(data)}`
+            `Server stop response: ${data.message || JSON.stringify(data)}`
           )
         )
-        .catch((err) => logPerformance(`서버 중지 요청 실패: ${err}`));
+        .catch((err) => logPerformance(`Server stop request failed: ${err}`));
     }
 
-    // 버튼 및 UI 상태를 완전히 초기 상태로 복원
-    captureButton.textContent = "시작";
+    captureButton.textContent = "Start";
     captureButton.classList.remove("stop");
     captureButton.disabled = false;
-    directionsButton.textContent = "📍 길찾기";
+    directionsButton.textContent = "📍 Directions";
     directionsButton.disabled = false;
     settingsButton.disabled = false;
     modelSelect.disabled = false;
     intervalInput.disabled = false;
     modeSelect.disabled = false;
 
-    statusDiv.textContent = "길안내를 중지했습니다. (스페이스: 분석 시작)";
-    logPerformance("길찾기 안내 중지됨");
-    speak("길찾기 안내를 중지했습니다.");
+    statusDiv.textContent = "Navigation stopped. (Space: start analysis)";
+    logPerformance("Navigation stopped");
+    speak("Navigation stopped.");
   }
 
   function finishNavigation() {
     if (watchId) {
       navigator.geolocation.clearWatch(watchId);
       watchId = null;
-      logPerformance("GPS 위치 추적 완료됨");
+      logPerformance("GPS tracking finished");
     }
 
     if (navigationSession) {
@@ -1076,45 +1041,43 @@ document.addEventListener("DOMContentLoaded", () => {
           session_id: navigationSession.id,
         }),
       }).catch((err) => {
-        logPerformance(`세션 종료 요청 실패: ${err.message}`);
+        logPerformance(`Session end request failed: ${err.message}`);
       });
       navigationSession = null;
     }
 
     isNavigating = false;
-    isProcessing = false; // 분석 중 상태 플래그를 확실하게 초기화
+    isProcessing = false;
     if (isAutoCapturing) {
       isAutoCapturing = false;
       clearTimeout(captureLoop);
       window.speechSynthesis.cancel();
-      // 서버에도 자동 처리 중지를 명시적으로 요청
       fetch("/stop_auto_processing", { method: "POST" })
         .then((res) => res.json())
         .then((data) =>
           logPerformance(
-            `서버 중지 응답: ${data.message || JSON.stringify(data)}`
+            `Server stop response: ${data.message || JSON.stringify(data)}`
           )
         )
-        .catch((err) => logPerformance(`서버 중지 요청 실패: ${err}`));
+        .catch((err) => logPerformance(`Server stop request failed: ${err}`));
     }
 
-    // 버튼 및 UI 상태를 완전히 초기 상태로 복원
-    captureButton.textContent = "시작";
+    captureButton.textContent = "Start";
     captureButton.classList.remove("stop");
     captureButton.disabled = false;
-    directionsButton.textContent = "📍 길찾기";
+    directionsButton.textContent = "📍 Directions";
     directionsButton.disabled = false;
     settingsButton.disabled = false;
     modelSelect.disabled = false;
     intervalInput.disabled = false;
     modeSelect.disabled = false;
 
-    statusDiv.textContent = "🎉 목적지 도착! (스페이스: 분석 시작)";
-    logPerformance("길찾기 안내 완료");
-    speak("목적지에 도착했습니다. 길안내를 종료합니다.");
+    statusDiv.textContent = "🎉 Destination reached! (Space: start analysis)";
+    logPerformance("Navigation finished");
+    speak("You have reached your destination. Ending navigation.");
   }
 
-  logPerformance("페이지 로드 완료, 모델 목록 및 카메라 초기화 시작");
+  logPerformance("Page loaded, initializing model list and camera");
 
   loadTTSSpeed();
   initializeSpeechRecognition();
